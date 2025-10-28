@@ -2,8 +2,25 @@ version: '3.8'
 
 services:
   web:
-    build: .
+    # We've removed the 'build: .' line.
+    # Now, Docker will pull the 'python:3.9-slim' image from Docker Hub.
+    image: python:3.9-slim
+    
+    # Set the working directory inside the container
+    working_dir: /app
+    
     ports:
-      - "5000:5000"
+      # Map host port 5001 to container port 5000
+      # The Flask app (app.py) must run on port 5000 inside the container
+      - "5001:5000"
+      
     volumes:
+      # Mount the current directory (containing app.py and requirements.txt)
+      # to /app in the container.
       - .:/app
+      
+    # This command runs when the container starts.
+    # 1. It installs the packages from requirements.txt.
+    # 2. It starts the Flask application (app.py).
+    command: sh -c "pip install -r requirements.txt && python app.py"
+
