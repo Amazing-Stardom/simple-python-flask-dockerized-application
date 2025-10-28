@@ -4,7 +4,7 @@ services:
   web:
     # We've removed the 'build: .' line.
     # Now, Docker will pull the 'python:3.9-slim' image from Docker Hub.
-    image: python:3.9-slim
+    image: python:3.6
     
     # Set the working directory inside the container
     working_dir: /app
