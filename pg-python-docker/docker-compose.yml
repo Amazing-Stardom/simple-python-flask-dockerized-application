@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_PASSWORD=mysecretpassword
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432" # Optional: Lets us connect from our PC
+
+  app:
+    build: .
+    ports:
+      - "4000:5000" # Host port 4000 -> Container port 5000
+    environment:
+      - DB_HOST=db
+      - DB_PASSWORD=mysecretpassword
+      - DB_USER=postgres
+      - DB_NAME=postgres
+    depends_on:
+      - db
+
+volumes:
+  db-data:
