@@ -3,13 +3,14 @@
 Build the image using the following command
 
 ```bash
-docker build -t simple-flask-app:latest .
+docker build -t my-python-app .
 ```
-
 Run the Docker container using the command shown below.
 
+- `-d` runs it in detached mode
+- `-P` publishes all EXPOSED ports to random host ports
 ```bash
-docker run -p 4000:4000 simple-flask-app:latest
+docker run -d -P my-python-app
 ```
 
 The application will be accessible at http:127.0.0.1:4000 or if you are using boot2docker then first find ip address using `$ boot2docker ip` and the use the ip `http://<host_ip>:4000`
