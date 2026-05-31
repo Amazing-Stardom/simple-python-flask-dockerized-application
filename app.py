@@ -2,7 +2,7 @@ from flask import Flask
 import os
 
 app = Flask(__name__)
-Key = asiwbfhyavqkvbhd!dnDFMAE 
+Key = aAKIA1234567890EXAMPLE
 @app.route("/")
 def hello():
     return "Flask inside Docker!!"
