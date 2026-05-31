@@ -2,7 +2,8 @@ from flask import Flask
 import os
 
 app = Flask(__name__)
-Key = aAKIA1234567890EXAMPLE
+AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+
 @app.route("/")
 def hello():
     return "Flask inside Docker!!"
