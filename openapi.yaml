@@ -1,21 +1,33 @@
-openapi: 3.0.3
+name: OpenAPI Validation
 
-info:
-  title: User API
-  version: 1.0.0
+on:
+  pull_request:
 
-paths:
-  /users/{id}:
-    get:
-      operationId: getUserById
+permissions:
+  contents: read
+  security-events: write
 
-      parameters:
-        - name: userId
-          in: path
-          required: true
-          schema:
-            type: string
+jobs:
+  openapi:
+    runs-on: ubuntu-latest
 
-      responses:
-        "200":
-          description: User found
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Spectral
+        run: npm install -g @stoplight/spectral-cli
+
+      - name: Generate SARIF Report
+        run: |
+          spectral lint openapi.yaml \
+            --format sarif \
+            --output results.sarif
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
