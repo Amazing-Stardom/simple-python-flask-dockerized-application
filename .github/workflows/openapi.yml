@@ -1,56 +1,55 @@
-name: OpenAPI Validation
+name: OpenAPI Review
 
 on:
   pull_request:
-  workflow_dispatch:
 
 permissions:
   contents: read
-  security-events: write
+  pull-requests: write
 
 jobs:
   openapi:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Install Spectral
-        run: npm install -g @stoplight/spectral-cli
-
-      - name: Create Spectral Ruleset
         run: |
-          cat > .spectral.yaml << 'EOF'
+          npm install -g @stoplight/spectral-cli
+
+      - name: Create Ruleset
+        run: |
+          cat > .spectral.yaml <<EOF
           extends:
             - spectral:oas
           EOF
 
-      - name: Validate OpenAPI and Generate SARIF
+      - name: Install Reviewdog
+        uses: reviewdog/action-setup@v1
+
+      - name: Run Spectral
         run: |
           spectral lint openapi.yaml \
             --ruleset .spectral.yaml \
-            --format sarif \
-            --output results.sarif || true
+            --format stylish > spectral.out || true
 
-      - name: Verify SARIF
+      - name: Show Findings
+        run: cat spectral.out
+
+      - name: Reviewdog File-Level Comment
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          ls -la
-
-          if [ ! -f results.sarif ]; then
-            echo "results.sarif was not generated"
-            exit 1
-          fi
-
-          echo "SARIF generated successfully"
-          head -20 results.sarif
-
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: results.sarif
+          reviewdog \
+            -efm="%f:%l:%c %t %m" \
+            -name="spectral" \
+            -reporter=github-pr-review \
+            -filter-mode=nofilter \
+            -fail-on-error=false \
+            -level=warning \
+            < spectral.out
