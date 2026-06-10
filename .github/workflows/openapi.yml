@@ -3,6 +3,7 @@ name: OpenAPI Validation
 on:
   workflow_dispatch:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -38,8 +39,8 @@ jobs:
       - name: Run Spectral
         run: |
           spectral lint openapi.yaml \
-            --ruleset .spectral.yaml \
-            --format stylish > spectral.out || true
+            --format sarif \
+            --output results.sarif || true
 
       - name: Show Spectral Output
         run: |
