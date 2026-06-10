@@ -1,8 +1,8 @@
 name: OpenAPI Validation
 
 on:
-  pull_request:
   workflow_dispatch:
+  pull_request:
 
 permissions:
   contents: read
@@ -26,28 +26,35 @@ jobs:
           npm install -g @stoplight/spectral-cli
           spectral --version
 
+      - name: Show Spectral Help
+        run: |
+          spectral lint --help
+
       - name: Show Repository Files
         run: |
           pwd
           ls -la
           find . -type f | sort
 
+      - name: Test Spectral SARIF
+        run: |
+          spectral lint openapi.yaml --format sarif
+
       - name: Generate SARIF
         run: |
           spectral lint openapi.yaml \
             --format sarif \
-            --output results.sarif || true
+            --output results.sarif
 
-      - name: Verify SARIF File
+      - name: Verify SARIF
         run: |
-          echo "Checking SARIF output..."
           ls -la
 
           if [ -f results.sarif ]; then
-            echo "results.sarif found"
+            echo "SARIF file created successfully"
             head -20 results.sarif
           else
-            echo "results.sarif NOT FOUND"
+            echo "SARIF file was not created"
             exit 1
           fi
 
