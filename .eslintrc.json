@@ -1,11 +1,9 @@
-{
-  "env": {
-    "node": true,
-    "es2021": true
+export default [
+  {
+    files: ["**/*.js"],
+    rules: {
+      semi: ["error", "always"],
+      "no-console": "warn",
+    },
   },
-  "extends": ["eslint:recommended"],
-  "rules": {
-    "semi": ["error", "always"],
-    "no-console": "warn"
-  }
-}
+];
