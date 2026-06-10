@@ -1,8 +1,8 @@
 name: OpenAPI Validation
 
 on:
-  workflow_dispatch:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,25 +13,39 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - run: npm install -g @stoplight/spectral-cli
+      - name: Install Spectral
+        run: npm install -g @stoplight/spectral-cli
 
-      - run: |
-          cat > .spectral.yaml <<EOF
-          extends:
-            - spectral:oas
-          EOF
+      - name: Install Reviewdog
+        uses: reviewdog/action-setup@v1
 
-      - uses: reviewdog/action-setup@v1
-
-      - run: |
+      - name: Run Spectral
+        run: |
           spectral lint openapi.yaml \
             --ruleset .spectral.yaml \
             --format stylish > spectral.out || true
 
-      - run: cat spectral.out
+      - name: Show Findings
+        run: |
+          cat spectral.out
+
+      - name: Reviewdog
+        if: github.event_name == 'pull_request'
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          reviewdog \
+            -f=spectral \
+            -name="spectral" \
+            -reporter=github-pr-review \
+            -filter-mode=nofilter \
+            -fail-level=none \
+            < spectral.out
