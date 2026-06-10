@@ -1,0 +1,95 @@
+name: ESLint Reviewdog
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  eslint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install ESLint
+        run: |
+          npm install eslint @eslint/js
+
+      - name: Run ESLint
+        run: |
+          npx eslint . -f json -o eslint.json || true
+
+      - name: Show ESLint Results
+        run: |
+          cat eslint.json
+
+      - name: Verify Findings
+        run: |
+          jq '.[].messages | length' eslint.json || true
+
+      - name: Convert JSON to RDJSON
+        run: |
+          cat > convert.js <<'EOF'
+          const fs = require('fs');
+
+          const eslint = JSON.parse(fs.readFileSync('eslint.json', 'utf8'));
+
+          const rdjson = {
+            source: { name: "eslint" },
+            diagnostics: []
+          };
+
+          for (const file of eslint) {
+            for (const msg of file.messages) {
+              rdjson.diagnostics.push({
+                message: msg.message,
+                location: {
+                  path: file.filePath.replace(process.cwd() + '/', ''),
+                  range: {
+                    start: {
+                      line: msg.line,
+                      column: msg.column
+                    }
+                  }
+                },
+                severity:
+                  msg.severity === 2 ? "ERROR" : "WARNING"
+              });
+            }
+          }
+
+          fs.writeFileSync(
+            "eslint.rdjson",
+            JSON.stringify(rdjson, null, 2)
+          );
+          EOF
+
+          node convert.js
+
+      - name: Show RDJSON
+        run: |
+          cat eslint.rdjson
+
+      - name: Install Reviewdog
+        uses: reviewdog/action-setup@v1
+
+      - name: Post PR Comments
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          reviewdog \
+            -f=rdjson \
+            -reporter=github-pr-review \
+            -filter-mode=nofilter \
+            -fail-level=none \
+            < eslint.rdjson
