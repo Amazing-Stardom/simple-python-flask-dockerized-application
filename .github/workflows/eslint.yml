@@ -1,0 +1,48 @@
+name: ESLint Reviewdog Demo
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  eslint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: |
+          npm install eslint
+
+      - name: Install Reviewdog
+        uses: reviewdog/action-setup@v1
+
+      - name: Run ESLint
+        run: |
+          npx eslint . \
+            -f unix > eslint.out || true
+
+      - name: Show ESLint Output
+        run: |
+          cat eslint.out
+
+      - name: Post Review Comments
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          reviewdog \
+            -f=eslint \
+            -name="eslint" \
+            -reporter=github-pr-review \
+            -filter-mode=nofilter \
+            -fail-level=none \
+            < eslint.out
