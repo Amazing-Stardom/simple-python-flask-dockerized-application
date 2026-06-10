@@ -1,11 +1,11 @@
-name: OpenAPI Validation
+name: OpenAPI Review
 
 on:
   pull_request:
 
 permissions:
   contents: read
-  security-events: write
+  pull-requests: write
 
 jobs:
   openapi:
@@ -21,13 +21,23 @@ jobs:
       - name: Install Spectral
         run: npm install -g @stoplight/spectral-cli
 
-      - name: Generate SARIF Report
+      - name: Install Reviewdog
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
+
+      - name: Run Spectral
         run: |
           spectral lint openapi.yaml \
-            --format sarif \
-            --output results.sarif
+            --format stylish > spectral.out || true
 
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: results.sarif
+      - name: Post PR Comments
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          reviewdog \
+            -f=eslint \
+            -name="openapi" \
+            -reporter=github-pr-review \
+            -level=warning \
+            < spectral.out
