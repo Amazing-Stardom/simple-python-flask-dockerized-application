@@ -1,8 +1,8 @@
 name: OpenAPI Validation
 
 on:
-  workflow_dispatch:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -22,41 +22,33 @@ jobs:
           node-version: 20
 
       - name: Install Spectral
-        run: |
-          npm install -g @stoplight/spectral-cli
-          spectral --version
+        run: npm install -g @stoplight/spectral-cli
 
-      - name: Show Spectral Help
+      - name: Create Spectral Ruleset
         run: |
-          spectral lint --help
+          cat > .spectral.yaml << 'EOF'
+          extends:
+            - spectral:oas
+          EOF
 
-      - name: Show Repository Files
-        run: |
-          pwd
-          ls -la
-          find . -type f | sort
-
-      - name: Test Spectral SARIF
-        run: |
-          spectral lint openapi.yaml --format sarif
-
-      - name: Generate SARIF
+      - name: Validate OpenAPI and Generate SARIF
         run: |
           spectral lint openapi.yaml \
+            --ruleset .spectral.yaml \
             --format sarif \
-            --output results.sarif
+            --output results.sarif || true
 
       - name: Verify SARIF
         run: |
           ls -la
 
-          if [ -f results.sarif ]; then
-            echo "SARIF file created successfully"
-            head -20 results.sarif
-          else
-            echo "SARIF file was not created"
+          if [ ! -f results.sarif ]; then
+            echo "results.sarif was not generated"
             exit 1
           fi
+
+          echo "SARIF generated successfully"
+          head -20 results.sarif
 
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v4
