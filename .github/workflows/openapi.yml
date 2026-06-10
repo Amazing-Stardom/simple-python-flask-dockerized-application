@@ -13,22 +13,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: Install Spectral
-        run: npm install -g @stoplight/spectral-cli
+        run: |
+          npm install -g @stoplight/spectral-cli
+          spectral --version
 
-      - name: Generate SARIF Report
+      - name: Show Repository Files
+        run: |
+          pwd
+          ls -la
+          find . -type f | sort
+
+      - name: Generate SARIF
         run: |
           spectral lint openapi.yaml \
             --format sarif \
             --output results.sarif || true
 
+      - name: Verify SARIF File
+        run: |
+          echo "Checking SARIF output..."
+          ls -la
+
+          if [ -f results.sarif ]; then
+            echo "results.sarif found"
+            head -20 results.sarif
+          else
+            echo "results.sarif NOT FOUND"
+            exit 1
+          fi
+
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: results.sarif
