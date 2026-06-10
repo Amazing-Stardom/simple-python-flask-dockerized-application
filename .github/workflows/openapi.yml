@@ -1,33 +1,91 @@
-name: OpenAPI Validation
+openapi: 3.0.3
 
-on:
-  pull_request:
+info:
+  title: User Management API
+  version: 1.0.0
 
-permissions:
-  contents: read
-  security-events: write
+servers:
+  - url: https://api.example.com
 
-jobs:
-  openapi:
-    runs-on: ubuntu-latest
+paths:
+  /users:
+    get:
+      operationId: getUsers
 
-    steps:
-      - uses: actions/checkout@v4
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
+    post:
+      operationId: createUser
 
-      - name: Install Spectral
-        run: npm install -g @stoplight/spectral-cli
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
 
-      - name: Generate SARIF Report
-        run: |
-          spectral lint openapi.yaml \
-            --format sarif \
-            --output results.sarif
+      responses:
+        "201":
+          description: User created
 
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: results.sarif
+  /users/{id}:
+    get:
+      operationId: getUserById
+
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /orders/{orderId}:
+    get:
+      operationId: getOrder
+
+      responses:
+        "200":
+          description: Order found
+
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+
+        email:
+          type: string
+
+        name:
+          type: string
+
+      required:
+        - id
+
+    CreateUserRequest:
+      type: object
+
+      properties:
+        email:
+          type: string
+
+        name:
+          type: string
