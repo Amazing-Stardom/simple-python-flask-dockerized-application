@@ -2,6 +2,7 @@ from flask import Flask
 import os
 
 app = Flask(__name__)
+AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
 
 @app.route("/")
 def hello():
